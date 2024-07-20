@@ -1,4 +1,7 @@
-; https://www.desmos.com/calculator/3dhiijglpj
+; https://www.desmos.com/calculator/ee5rh7otur
+; https://en.wikipedia.org/wiki/Taylor_series
+; Approximating trigonometric functions with Taylor series works perfectly good for values near zero. 
+; The camera rotates by at most 0.05 radians per frame so there is no difference between this and an accurate sin / cos implementation.
 
 ; x @ xmm0
 ; ret @ xmm0
