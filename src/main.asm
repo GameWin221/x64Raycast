@@ -300,9 +300,9 @@ _window_proc_timer:
     ; Key Up Arrow
     mov ecx, 0x26
     call GetAsyncKeyState 
-
     bt ax, 15 ; MSB set if key down
     jnc _window_proc_timer_up_not_pressed
+
     movss xmm0, dword [camera_move_speed]
     call MoveCameraForward
 _window_proc_timer_up_not_pressed:
@@ -310,9 +310,9 @@ _window_proc_timer_up_not_pressed:
     ; Key Down Arrow
     mov ecx, 0x28
     call GetAsyncKeyState 
-
     bt ax, 15 ; MSB set if key down
     jnc _window_proc_timer_down_not_pressed
+
     mov eax, dword [camera_move_speed]
     xor eax, 0x80000000 ; Negate the last bit, that negates the float
     movd xmm0, eax
@@ -322,23 +322,33 @@ _window_proc_timer_down_not_pressed:
     ; Key Left Arrow
     mov ecx, 0x25
     call GetAsyncKeyState 
-
     bt ax, 15 ; MSB set if key down
     jnc _window_proc_timer_left_not_pressed
+
     movss xmm0, dword [camera_rotate_speed]
     call RotateCameraLeft
 _window_proc_timer_left_not_pressed:
     ; Key Right Arrow
     mov ecx, 0x27
     call GetAsyncKeyState 
-
     bt ax, 15 ; MSB set if key down
     jnc _window_proc_timer_right_not_pressed
+
     mov eax, dword [camera_rotate_speed]
     xor eax, 0x80000000 ; Negate the last bit, that negates the float
     movd xmm0, eax
     call RotateCameraLeft
 _window_proc_timer_right_not_pressed:
+
+    ; Key E
+    mov ecx, 0x45
+    call GetAsyncKeyState 
+    bt ax, 15 ; MSB set if key down
+    jnc _window_proc_timer_E_not_pressed
+
+    mov byte [world_data + (world_width*13+12)], 0
+    mov byte [world_data + (world_width*12+13)], 0
+_window_proc_timer_E_not_pressed:
 
     mov rcx, qword [wnd_hwnd]
     mov rdx, 0
@@ -365,12 +375,12 @@ _window_proc_paint:
 
     mov ecx, 0
     mov edx, wnd_height/2
-    mov r8d, world_ceiling_color
+    mov r8d, dword [world_ceiling_color]
     call FillCanvasRows
 
     mov ecx, wnd_height/2
     mov edx, wnd_height
-    mov r8d, world_floor_color
+    mov r8d, dword [world_floor_color]
     call FillCanvasRows
 
     call RaycastWorld
@@ -928,35 +938,42 @@ align 4
     camera_plane_x: dd 0.0
     camera_plane_y: dd 0.66
 
+    world_floor_color: dd 0x00525252
+    world_ceiling_color: dd 0x0094BCF7
+
 align 8
     wnd_hwnd: dq 0
     wnd_hinstance: dq 0
 
-section .rodata
 align 16
     world_data: 
 align 1
-    world_data_row0: db 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-    world_data_row1: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 1
-    world_data_row2: db 1, 0, 2, 2, 2, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 1
-    world_data_row3: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
-    world_data_row4: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
-    world_data_row5: db 1, 0, 2, 2, 2, 0, 0, 0, 4, 4, 4, 4, 4, 0, 0, 1
-    world_data_row6: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 1
-    world_data_row7: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 1
-    world_data_row8: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 1
-    world_data_row9: db 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    world_data_row0:  db 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 4, 4
+    world_data_row1:  db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4
+    world_data_row2:  db 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4
+    world_data_row3:  db 1, 0, 2, 2, 2, 0, 0, 0, 0, 1, 1, 4, 4, 0, 0, 4
+    world_data_row4:  db 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 4
+    world_data_row5:  db 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 1
+    world_data_row6:  db 1, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 0, 1, 0, 0, 1
+    world_data_row7:  db 1, 0, 2, 2, 2, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 1
+    world_data_row8:  db 1, 0, 0, 2, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 1
+    world_data_row9:  db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1
+    world_data_row10: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+    world_data_row11: db 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+    world_data_row12: db 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 4, 2, 1
+    world_data_row13: db 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 4, 0, 0, 1
+    world_data_row14: db 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1
+    world_data_row15: db 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 
+section .rodata
 align 4
-    world_floor_color: equ 0x00525252
-    world_ceiling_color: equ 0x0094BCF7
     world_texture_width: equ 64
     world_texture_height: equ 64
 
     timer_interval_ms: equ 10
 
     world_width: equ 16
-    world_height: equ 10
+    world_height: equ 16
 
     wnd_width: equ 1280
     wnd_height: equ 720
