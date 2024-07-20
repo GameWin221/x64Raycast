@@ -867,80 +867,59 @@ RotateCameraLeft:
 
     movss xmm2, xmm0
 
-    fninit
+    ; cos(rad_delta) @ xmm1
+    call ApproxCos
+    movss xmm1, xmm0
 
     ; sin(rad_delta) @ xmm0
-    movss dword [fld_temp], xmm2
-    fld dword [fld_temp]
-    fsin 
-    fstp dword [fld_temp]
-    movss xmm0, dword [fld_temp]
-    
-    ; cos(rad_delta) @ xmm1
-    movss dword [fld_temp], xmm2
-    fld dword [fld_temp]
-    fcos 
-    fstp dword [fld_temp]
-    movss xmm1, dword [fld_temp]
+    movss xmm0, xmm2
+    call ApproxSin
 
-    ; old_dir_x @ xmm2
-    ; old_dir_y @ xmm3
+    ; old_dir_x @ xmm2 (temporary)
+    ; old_dir_y @ xmm3 (temporary)
     movss xmm2, dword [camera_dir_x]
     movss xmm3, dword [camera_dir_y]
-
-    movss xmm4, xmm2
-    mulss xmm4, xmm1
-    movss xmm5, xmm3
-    mulss xmm5, xmm0
-    subss xmm4, xmm5
-    movss dword [camera_dir_x], xmm4
-
-    movss xmm4, xmm2
-    mulss xmm4, xmm0
-    movss xmm5, xmm3
+    
+    movss xmm5, xmm2
     mulss xmm5, xmm1
-    addss xmm4, xmm5
-    movss dword [camera_dir_y], xmm4
+    movss xmm4, xmm3
+    vfnmadd213ss xmm4, xmm0, xmm5
+    movss dword [camera_dir_x], xmm4 ; camera_dir_x = camera_dir_x * cos(rad_delta) - camera_dir_y * sin(rad_delta)
 
-    ; old_plane_x @ xmm2
-    ; old_plane_y @ xmm3
+    mulss xmm3, xmm1
+    vfmadd213ss xmm2, xmm0, xmm3
+    movss dword [camera_dir_y], xmm2 ; camera_dir_y = old_dir_x * sin(rad_delta) + camera_dir_y * cos(rad_delta)
+
+    ; old_plane_x @ xmm2 (temporary)
+    ; old_plane_y @ xmm3 (temporary)
     movss xmm2, dword [camera_plane_x]
     movss xmm3, dword [camera_plane_y]
 
-    movss xmm4, xmm2
-    mulss xmm4, xmm1
-    movss xmm5, xmm3
-    mulss xmm5, xmm0
-    subss xmm4, xmm5
-    movss dword [camera_plane_x], xmm4
-
-    movss xmm4, xmm2
-    mulss xmm4, xmm0
-    movss xmm5, xmm3
+    movss xmm5, xmm2
     mulss xmm5, xmm1
-    addss xmm4, xmm5
-    movss dword [camera_plane_y], xmm4
+    movss xmm4, xmm3
+    vfnmadd213ss xmm4, xmm0, xmm5
+    movss dword [camera_plane_x], xmm4 ; camera_plane_x = camera_plane_x * cos(rad_delta) - camera_plane_y * sin(rad_delta)
 
-    ; dir_x = old_dir_x * cos(rad_delta) - old_dir_y * sin(rad_delta)
-    ; dir_y = old_dir_x * sin(rad_delta) + old_dir_y * cos(rad_delta)
-    ; plane_x = old_plane_x * cos(rad_delta) - old_plane_y * sin(rad_delta)
-    ; plane_y = old_plane_x * sin(rad_delta) + old_plane_y * cos(rad_delta)
+    mulss xmm3, xmm1
+    vfmadd213ss xmm2, xmm0, xmm3
+    movss dword [camera_plane_y], xmm2 ; camera_plane_y = old_plane_x * sin(rad_delta) + camera_plane_y * cos(rad_delta)
 
     add rsp, 32
     pop rbp
     ret
+
+%include "./src/math.asm"
 
 section .bss
 align 16
     bitmap_data: resd wnd_width*wnd_height
     world_textures: resd world_texture_width*world_texture_height*8
 
-    fld_temp: resq 1
-
 section .data
 align 4
-    camera_move_speed: dd 0.05 
-    camera_rotate_speed: dd 0.05 
+    camera_move_speed: dd 0.035 
+    camera_rotate_speed: dd 0.035 
 
     camera_pos_x: dd 6.0
     camera_pos_y: dd 4.0 
